@@ -66,20 +66,20 @@ class HTML2MoinMoin(HTMLParser):
 
     def __init__(self):
         HTMLParser.__init__(self)
-        self.string = ''
+        self.string = u''
         self.output = sys.stdout
         self.list_mode = []
         self.preformatted = False
         self.verbose = 0
 
     def clear(self):
-        self.string = ''
+        self.string = u''
 
     def parsed(self):
         return self.string
 
     def write(self, text):
-        self.string += text
+        self.string += text.decode('latin-1')
 
 
     def do_ul_start(self, attrs, tag):
@@ -226,43 +226,39 @@ class SubirHoja(ActionBase):
                 lin = l.pop(0)
                 if lin[:3] == '{{{':
                     bloques.append(cadena)
-                    cadena = '{{{#!sagecell\n'
+                    cadena = u'\n{{{#!sagecell\n'
                     i += 1
                     lin = l.pop(0)
                     while lin[:3] != '///':
                         cadena += lin
                         lin = l.pop(0)
                         i += 1
-                    cadena += '}}}\n'
+                    cadena += u'}}}\n'
                     bloques.append(cadena)
-                    cadena = ''
+                    cadena = u''
                     while lin[:3] != '}}}':
                         lin = l.pop(0)
                         i+=1
                 else:
-                    cadena+=lin
+                    cadena+=lin.decode('utf-8')
 
             bloques2=[]
             p = HTML2MoinMoin()
             for l in bloques:
-                if l[:13] == '{{{#!sagecell':
+                if l[:14] == '\n{{{#!sagecell':
                     bloques2.append(p.parsed())
                     p.clear()
                     bloques2.append(l)
                 else:
                     p.feed(l)
-            filecontent = ''
+            filecontent = u''
             for l in bloques2:
-                for i in l:
-                    try:
-                        filecontent += i.encode()
-                    except:
-                        pass
+                filecontent += l
             self.pagename = target
             oldtext = Page(request, self.pagename).get_raw_body()
             pg = PageEditor(request, self.pagename)
             try:
-                msg = pg.saveText(_(oldtext + filecontent), 0, comment=comment)
+                msg = pg.saveText(oldtext + filecontent, 0, comment=comment)
                 status = True
             except pg.EditConflict, e:
                 msg = e.message
